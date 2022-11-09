@@ -3,38 +3,38 @@
 
 #include <furi_hal_resources.h>
 
-/* Настройки */
-#define DHT_TIMEOUT 65534 //Количество итераций, после которых функция вернёт пустые значения
-#define DHT_POLLING_CONTROL 1 //Включение проверки частоты опроса датчика
+/* Settings */
+#define DHT_TIMEOUT 65534 //Number of iterations after which the function will return empty values
+#define DHT_POLLING_CONTROL 1 //Enable sensor polling rate check
 #define DHT_POLLING_INTERVAL_DHT11 \
-    2000 //Интервал опроса DHT11 (0.5 Гц по даташиту). Можно поставить 1500, будет работать
-//Костыль, временно 2 секунды для датчика AM2302
-#define DHT_POLLING_INTERVAL_DHT22 2000 //Интервал опроса DHT22 (1 Гц по даташиту)
-#define DHT_IRQ_CONTROL //Выключать прерывания во время обмена данных с датчиком
-/* Структура возвращаемых датчиком данных */
+    2000 //DHT11 polling interval (0.5 Hz according to datasheet). You can put 1500, it will work
+//Toggle, temporarily 2 seconds for AM2302 sensor
+#define DHT_POLLING_INTERVAL_DHT22 2000 //DHT22 polling interval (1 Hz according to datasheet)
+#define DHT_IRQ_CONTROL //Disable interrupts while communicating with the sensor
+/* The structure of the data returned by the sensor */
 typedef struct {
     float hum;
     float temp;
 } DHT_data;
 
-/* Тип используемого датчика */
+/* Type of sensor used */
 typedef enum { DHT11, DHT22 } DHT_type;
 
-/* Структура объекта датчика */
+/* Sensor object structure */
 typedef struct {
     char name[11];
-    const GpioPin* GPIO; //Пин датчика
-    DHT_type type; //Тип датчика (DHT11 или DHT22)
+    const GpioPin* GPIO; //Sensor Pin
+    DHT_type type; //Sensor type (DHT11 or DHT22)
 
-//Контроль частоты опроса датчика. Значения не заполнять!
+//Sensor polling frequency control. Do not fill in the values!
 #if DHT_POLLING_CONTROL == 1
-    uint32_t lastPollingTime; //Время последнего опроса датчика
-    float lastTemp; //Последнее значение температуры
-    float lastHum; //Последнее значение влажности
+    uint32_t lastPollingTime; //Time of the last sensor poll
+    float lastTemp; //Last temperature value
+    float lastHum; //Last humidity value
 #endif
 } DHT_sensor;
 
-/* Прототипы функций */
-DHT_data DHT_getData(DHT_sensor* sensor); //Получить данные с датчика
+/* Function prototypes */
+DHT_data DHT_getData(DHT_sensor* sensor); //Get data from the sensor
 
 #endif

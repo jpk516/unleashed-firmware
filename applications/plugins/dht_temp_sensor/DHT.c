@@ -9,8 +9,8 @@ DHT_data DHT_getData(DHT_sensor* sensor) {
     DHT_data data = {-128.0f, -128.0f};
 
 #if DHT_POLLING_CONTROL == 1
-    /* Ограничение по частоте опроса датчика */
-    //Определение интервала опроса в зависимости от датчика
+    /* Limitation on the frequency of polling the sensor */
+    //Determine the polling interval depending on the sensor
     uint16_t pollingInterval;
     if(sensor->type == DHT11) {
         pollingInterval = DHT_POLLING_INTERVAL_DHT11;
@@ -18,7 +18,7 @@ DHT_data DHT_getData(DHT_sensor* sensor) {
         pollingInterval = DHT_POLLING_INTERVAL_DHT22;
     }
 
-    //Если интервал маленький, то возврат последнего удачного значения
+    //If the interval is small, then return the last known good value
     if((furi_get_tick() - sensor->lastPollingTime < pollingInterval) &&
        sensor->lastPollingTime != 0) {
         data.hum = sensor->lastHum;
@@ -28,18 +28,18 @@ DHT_data DHT_getData(DHT_sensor* sensor) {
     sensor->lastPollingTime = furi_get_tick() + 1;
 #endif
 
-    //Опускание линии данных на 18 мс
+    //Down data line by 18ms
     lineDown();
 #ifdef DHT_IRQ_CONTROL
-    //Выключение прерываний, чтобы ничто не мешало обработке данных
+    // Turn off interrupts so that nothing interferes with data processing
     __disable_irq();
 #endif
     Delay(18);
 
-    //Подъём линии
+    //Raise the line
     lineUp();
 
-    /* Ожидание ответа от датчика */
+    /* Waiting for a response from the sensor */
     uint16_t timeout = 0;
     while(!getLine()) {
         timeout++;
@@ -47,25 +47,25 @@ DHT_data DHT_getData(DHT_sensor* sensor) {
 #ifdef DHT_IRQ_CONTROL
             __enable_irq();
 #endif
-            //Если датчик не отозвался, значит его точно нет
-            //Обнуление последнего удачного значения, чтобы
-            //не получать фантомные значения
+            //If the sensor did not respond, then it definitely does not exist
+            //Zero last good value so that
+            //you don't get phantom values
             sensor->lastHum = -128.0f;
             sensor->lastTemp = -128.0f;
 
             return data;
         }
     }
-    //Ожидание спада
+    //Waiting for fall
     while(getLine()) {
         timeout++;
         if(timeout > DHT_TIMEOUT) {
 #ifdef DHT_IRQ_CONTROL
             __enable_irq();
 #endif
-            //Если датчик не отозвался, значит его точно нет
-            //Обнуление последнего удачного значения, чтобы
-            //не получать фантомные значения
+            //If the sensor did not respond, then it definitely does not exist
+            //Zero last good value so that
+            //don't get phantom values
             sensor->lastHum = -128.0f;
             sensor->lastTemp = -128.0f;
 
@@ -73,7 +73,7 @@ DHT_data DHT_getData(DHT_sensor* sensor) {
         }
     }
     timeout = 0;
-    //Ожидание подъёма
+    //Waiting for rise
     while(!getLine()) {
         timeout++;
         if(timeout > DHT_TIMEOUT) {
@@ -81,9 +81,9 @@ DHT_data DHT_getData(DHT_sensor* sensor) {
 #ifdef DHT_IRQ_CONTROL
                 __enable_irq();
 #endif
-                //Если датчик не отозвался, значит его точно нет
-                //Обнуление последнего удачного значения, чтобы
-                //не получать фантомные значения
+                //If the sensor did not respond, then it definitely does not exist
+                //Zero last good value so that
+                //don't get phantom values
                 sensor->lastHum = -128.0f;
                 sensor->lastTemp = -128.0f;
 
@@ -92,46 +92,46 @@ DHT_data DHT_getData(DHT_sensor* sensor) {
         }
     }
     timeout = 0;
-    //Ожидание спада
+    //Waiting for fall
     while(getLine()) {
         timeout++;
         if(timeout > DHT_TIMEOUT) {
 #ifdef DHT_IRQ_CONTROL
             __enable_irq();
 #endif
-            //Если датчик не отозвался, значит его точно нет
-            //Обнуление последнего удачного значения, чтобы
-            //не получать фантомные значения
+            //If the sensor did not respond, then it definitely does not exist
+            //Zero last good value so that
+            //don't get phantom values
             sensor->lastHum = -128.0f;
             sensor->lastTemp = -128.0f;
             return data;
         }
     }
 
-    /* Чтение ответа от датчика */
+    /* Read the response from the sensor */
     uint8_t rawData[5] = {0, 0, 0, 0, 0};
     for(uint8_t a = 0; a < 5; a++) {
         for(uint8_t b = 7; b != 255; b--) {
             uint16_t hT = 0, lT = 0;
-            //Пока линия в низком уровне, инкремент переменной lT
+            //While the line is low, increment variable lT
             while(!getLine() && lT != 65535) lT++;
-            //Пока линия в высоком уровне, инкремент переменной hT
+            //While the line is high, increment variable hT
             timeout = 0;
             while(getLine() && hT != 65535) hT++;
-            //Если hT больше lT, то пришла единица
+            //If hT is greater than lT, then one has arrived
             if(hT > lT) rawData[a] |= (1 << b);
         }
     }
 #ifdef DHT_IRQ_CONTROL
-    //Включение прерываний после приёма данных
+    // Enable interrupts after receiving data
     __enable_irq();
 #endif
-    /* Проверка целостности данных */
+    /* Data integrity check */
     if((uint8_t)(rawData[0] + rawData[1] + rawData[2] + rawData[3]) == rawData[4]) {
-        //Если контрольная сумма совпадает, то конвертация и возврат полученных значений
+        //If the checksum matches, then convert and return the resulting values
         if(sensor->type == DHT22) {
             data.hum = (float)(((uint16_t)rawData[0] << 8) | rawData[1]) * 0.1f;
-            //Проверка на отрицательность температуры
+            //Check for negative temperature
             if(!(rawData[2] & (1 << 7))) {
                 data.temp = (float)(((uint16_t)rawData[2] << 8) | rawData[3]) * 0.1f;
             } else {
@@ -141,17 +141,17 @@ DHT_data DHT_getData(DHT_sensor* sensor) {
         }
         if(sensor->type == DHT11) {
             data.hum = (float)rawData[0];
-            data.temp = (float)rawData[2];
-            //DHT11 производства ASAIR имеют дробную часть в температуре
-            //А ещё температуру измеряет от -20 до +60 *С
-            //Вот прикол, да?
+            data.temp = (float)rawData[2]*1.8+32;
+            //DHT11 manufactured by ASAIR have a fractional part in temperature
+            //It also measures temperature from -20 to +60 *С
+            //Here's a joke, right?
             if(rawData[3] != 0) {
-                //Проверка знака
+                //Check sign
                 if(!(rawData[3] & (1 << 7))) {
-                    //Добавление положительной дробной части
+                    //Add positive fractional part
                     data.temp += rawData[3] * 0.1f;
                 } else {
-                    //А тут делаем отрицательное значение
+                    // And here we make a negative value
                     rawData[3] &= ~(1 << 7);
                     data.temp += rawData[3] * 0.1f;
                     data.temp *= -1;

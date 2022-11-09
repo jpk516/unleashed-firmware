@@ -23,8 +23,8 @@
 
 #include "DHT.h"
 
-#define APP_NAME "DHT_monitor"
-#define APP_PATH_FOLDER "/ext/dht_monitor"
+#define APP_NAME "DHT monitor"
+#define APP_PATH_FOLDER "/ext/DHT monitor"
 #define APP_FILENAME "sensors.txt"
 #define MAX_SENSORS 5
 
@@ -70,13 +70,13 @@ typedef struct {
     VariableItem* item;
     Widget* widget;
 
-    char txtbuff[30]; //Буффер для печати строк на экране
-    bool last_OTG_State; //Состояние OTG до запуска приложения
-    Storage* storage; //Хранилище датчиков
-    Stream* file_stream; //Поток файла с датчиками
-    int8_t sensors_count; // Количество загруженных датчиков
-    DHT_sensor sensors[MAX_SENSORS]; //Сохранённые датчики
-    DHT_data data; //Инфа из датчика
+    char txtbuff[30]; //Buffer for printing lines on the screen
+    bool last_OTG_State; //OTG state before application launch
+    Storage* storage; //Storage of sensors
+    Stream* file_stream; // Stream file with sensors
+    int8_t sensors_count; // Number of loaded sensors
+    DHT_sensor sensors[MAX_SENSORS]; //Saved sensors
+    DHT_data data; //Info from the sensor
     DHT_sensor* currentSensorEdit; //Указатель на редактируемый датчик
 
 } PluginData;

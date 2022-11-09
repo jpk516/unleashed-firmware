@@ -1,8 +1,8 @@
 #include "../quenon_dht_mon.h"
 
-/* ============== Главный экран ============== */
+/* ============== Main Screen ============== */
 void scene_main(Canvas* const canvas, PluginData* app) {
-    //Рисование бара
+    //Drawing a bar
     canvas_draw_box(canvas, 0, 0, 128, 14);
     canvas_set_color(canvas, ColorWhite);
     canvas_set_font(canvas, FontPrimary);
@@ -26,7 +26,7 @@ void scene_main(Canvas* const canvas, PluginData* app) {
                 snprintf(
                     app->txtbuff,
                     sizeof(app->txtbuff),
-                    "%2.1f*C/%d%%",
+                    "%2.1f*F/%d%%",
                     (double)app->data.temp,
                     (int8_t)app->data.hum);
                 canvas_draw_str(canvas, 64, 24 + 10 * i, app->txtbuff);
